@@ -66,10 +66,11 @@ class LimpiezaModel(Model):
     '''
     Define el modelo del juego de la vida.
     '''
-    def __init__(self, width, height):
-        self.num_agents = 3
-        self.porcentajesucias = .20
-        self.num_suciedad = round((width * height) * self.porcentajesucias)
+    def __init__(self, width, height, agents, dirty, steps):
+        self.num_agents = agents
+        self.porcentaje_sucias = dirty
+        self.pasos = steps
+        self.num_suciedad = round((width * height) * self.porcentaje_sucias)
         self.grid = MultiGrid(width, height, True)
         self.schedule = SimultaneousActivation(self)
         self.running = True #Para la visualizacion usando navegador

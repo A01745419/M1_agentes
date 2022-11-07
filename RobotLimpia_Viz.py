@@ -41,12 +41,15 @@ def agent_portrayal(agent):
     else:
         return portrayal4 # limpio
 
-ancho = 20
-alto = 20
+ancho = 10
+alto = 10
+agentes = 3
+porcentaje_sucias = .20
+pasos = 10
 grid = CanvasGrid(agent_portrayal, ancho, alto, 750, 750)
 server = ModularServer(LimpiezaModel,
                        [grid],
                        "Robot de Limpieza",
-                       {"width":ancho, "height":alto})
+                       {"width":ancho, "height":alto, "agents": agentes, "dirty": porcentaje_sucias, "steps": pasos})
 server.port = 8521 # The default
 server.launch()
