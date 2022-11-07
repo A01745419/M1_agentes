@@ -32,11 +32,11 @@ def agent_portrayal(agent):
                  "Layer": 0,
                  "Color": "black",
                  "r": 0}
-    if agent.tipo == 1: # robot limpia
+    if agent.tipo == 1: # robot normal
         return portrayal
     elif agent.tipo == 0: # sucio
         return portrayal2
-    elif agent.tipo == 3: # limpiando
+    elif agent.tipo == 3: # robot limpiando
         return portrayal3
     else:
         return portrayal4 # limpio
