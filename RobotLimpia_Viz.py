@@ -12,26 +12,34 @@ def agent_portrayal(agent):
     portrayal = {"Shape": "circle",
                  "Filled": "false",
                  "Layer": 0,
-                 "Color": "blue",
-                 "r": 0.5}
+                 "Color": "gray",
+                 "r": 0.8}
 
     portrayal2 = {"Shape": "circle",
                  "Filled": "true",
                  "Layer": 0,
                  "Color": "black",
-                 "r": 0.3}
+                 "r": 0.2}
 
     portrayal3 = {"Shape": "circle",
                  "Filled": "true",
                  "Layer": 0,
+                 "Color": "blue",
+                 "r": 0.5}
+
+    portrayal4 = {"Shape": "circle",
+                 "Filled": "true",
+                 "Layer": 0,
                  "Color": "black",
                  "r": 0}
-    if agent.tipo == 1:
+    if agent.tipo == 1: # robot limpia
         return portrayal
-    elif agent.tipo == 0:
+    elif agent.tipo == 0: # sucio
         return portrayal2
-    else:
+    elif agent.tipo == 3: # limpiando
         return portrayal3
+    else:
+        return portrayal4 # limpio
 
 ancho = 20
 alto = 20

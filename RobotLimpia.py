@@ -34,8 +34,12 @@ class RobotLimpiezaAgent(Agent):
         if len(cellmates) != 0:
             for i in cellmates:
                 if i.tipo == 0:
-                    i.tipo = 3
+                    self.tipo = 3
+                    i.tipo = 4
                     limpia = True
+                elif i.tipo == 4:
+                    self.tipo = 1
+                
         if len(cellmates) == 0 or limpia == False:
             new_position = self.random.choice(possible_steps)
             cellmates_newp = self.model.grid.get_cell_list_contents([new_position])
