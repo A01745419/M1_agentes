@@ -45,7 +45,7 @@ ancho = 10
 alto = 10
 agentes = 3
 porcentaje_sucias = .20
-pasos = 10
+pasos = 50
 grid = CanvasGrid(agent_portrayal, ancho, alto, 750, 750)
 server = ModularServer(LimpiezaModel,
                        [grid],

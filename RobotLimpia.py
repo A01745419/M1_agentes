@@ -37,6 +37,7 @@ class RobotLimpiezaAgent(Agent):
                     self.tipo = 3
                     i.tipo = 4
                     limpia = True
+                    self.model.num_suciedad -= 1
                 elif i.tipo == 4:
                     self.tipo = 1
                 
@@ -51,7 +52,15 @@ class RobotLimpiezaAgent(Agent):
                 self.model.grid.move_agent(self, new_position)
 
     def step(self):
-        self.move()
+        if self.model.steps_max > 0:
+            self.move()
+            self.model.steps_max -= 1
+            print(f'Movimientos actuales: {self.model.movimientos}')
+        else:
+            print("SE ACABARON LOS STEPS")
+            print(f'Numero de celdas sucias= {self.model.num_suciedad}')
+            print(f'Porcentaje de celdas sucias= {self.model.porcentaje_sucias_final}')
+            print(f'Total de movimientos= {self.model.movimientos}')
 
 
 class SuciedadAgent(Agent):
@@ -70,11 +79,13 @@ class LimpiezaModel(Model):
         self.num_agents = agents
         self.porcentaje_sucias = dirty
         self.pasos = steps
+        self.steps_max = self.pasos * self.num_agents
         self.num_suciedad = round((width * height) * self.porcentaje_sucias)
         self.grid = MultiGrid(width, height, True)
         self.schedule = SimultaneousActivation(self)
         self.running = True #Para la visualizacion usando navegador
         self.movimientos = 0
+        self.porcentaje_sucias_final = (self.num_suciedad * 100) // (width * height)
         celdas = []
         
         for i in range(self.num_agents):
@@ -97,4 +108,3 @@ class LimpiezaModel(Model):
     
     def step(self):
         self.schedule.step()
-        print(self.movimientos)
