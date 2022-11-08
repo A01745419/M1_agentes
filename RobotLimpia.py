@@ -50,17 +50,14 @@ class RobotLimpiezaAgent(Agent):
                     self.model.movimientos += 1
             elif len(cellmates_newp) == 0:
                 self.model.grid.move_agent(self, new_position)
+                self.model.movimientos += 1
 
     def step(self):
-        if self.model.steps_max > 0:
+        if self.model.steps_max > 0 and self.model.num_suciedad > 0:
             self.move()
             self.model.steps_max -= 1
-            print(f'Movimientos actuales: {self.model.movimientos}')
         else:
-            print("SE ACABARON LOS STEPS")
-            print(f'Numero de celdas sucias= {self.model.num_suciedad}')
-            print(f'Porcentaje de celdas sucias= {self.model.porcentaje_sucias_final}')
-            print(f'Total de movimientos= {self.model.movimientos}')
+            print("FIN DE LA SIMULACION")
 
 
 class SuciedadAgent(Agent):
@@ -76,11 +73,13 @@ class LimpiezaModel(Model):
     Define el modelo del juego de la vida.
     '''
     def __init__(self, width, height, agents, dirty, steps):
+        self.width = width
+        self.height = height
         self.num_agents = agents
-        self.porcentaje_sucias = dirty
+        self.porcentaje_sucias = dirty 
         self.pasos = steps
         self.steps_max = self.pasos * self.num_agents
-        self.num_suciedad = round((width * height) * self.porcentaje_sucias)
+        self.num_suciedad = round((self.width * self.height) * self.porcentaje_sucias)
         self.grid = MultiGrid(width, height, True)
         self.schedule = SimultaneousActivation(self)
         self.running = True #Para la visualizacion usando navegador
@@ -108,3 +107,9 @@ class LimpiezaModel(Model):
     
     def step(self):
         self.schedule.step()
+        self.porcentaje_sucias_final = (self.num_suciedad * 100) // (self.width * self.height)
+        print(f'Numero de celdas sucias restantes= {self.num_suciedad}')
+        print(f'Porcentaje de celdas sucias restantes= {self.porcentaje_sucias_final} %')
+        print(f'Total de movimientos realizados por los {self.num_agents} agentes= {self.movimientos}')
+        print(f'Pasos totales restantes= {self.steps_max}')
+        print(" ")
