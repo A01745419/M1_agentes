@@ -8,6 +8,7 @@ from mesa.space import MultiGrid
 # Con `SimultaneousActivation` hacemos que todos los agentes se activen de manera simultanea.
 from mesa.time import SimultaneousActivation
 import numpy as np
+from mesa.datacollection import DataCollector
 
 class RobotLimpiezaAgent(Agent):
     '''
@@ -21,6 +22,7 @@ class RobotLimpiezaAgent(Agent):
         '''
         super().__init__(unique_id, model)
         self.tipo = 1
+        self.movimientos_robot = 0
 
 
     def move(self):
@@ -48,9 +50,11 @@ class RobotLimpiezaAgent(Agent):
                 if cellmates_newp[0].tipo != 1:
                     self.model.grid.move_agent(self, new_position)
                     self.model.movimientos += 1
+                    self.movimientos_robot += 1
             elif len(cellmates_newp) == 0:
                 self.model.grid.move_agent(self, new_position)
                 self.model.movimientos += 1
+                self.movimientos_robot += 1
 
     def step(self):
         if self.model.steps_max > 0 and self.model.num_suciedad > 0:
@@ -67,6 +71,7 @@ class SuciedadAgent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         self.tipo = 0
+        self.movimientos_robot = 0
             
 class LimpiezaModel(Model):
     '''
@@ -86,6 +91,10 @@ class LimpiezaModel(Model):
         self.movimientos = 0
         self.porcentaje_sucias_final = (self.num_suciedad * 100) // (width * height)
         celdas = []
+        self.datacollector = DataCollector(
+            model_reporters={"Total Movements":LimpiezaModel.calculate_movements},
+            agent_reporters={}
+        )
         
         for i in range(self.num_agents):
             a = RobotLimpiezaAgent(i, self)
@@ -103,13 +112,19 @@ class LimpiezaModel(Model):
             self.grid.place_agent(a, (pos[0], pos[1])) 
             celdas.remove(pos)
         
-        
-    
+    def calculate_movements(model):
+        total_movements = 0
+        movements_report = [agent.movimientos_robot for agent in model.schedule.agents]
+        for x in movements_report:
+            total_movements += x
+        return total_movements
     def step(self):
         self.schedule.step()
+        self.datacollector.collect(self)
         self.porcentaje_sucias_final = (self.num_suciedad * 100) // (self.width * self.height)
         print(f'Numero de celdas sucias restantes= {self.num_suciedad}')
         print(f'Porcentaje de celdas sucias restantes= {self.porcentaje_sucias_final} %')
         print(f'Total de movimientos realizados por los {self.num_agents} agentes= {self.movimientos}')
         print(f'Pasos totales restantes= {self.steps_max}')
         print(" ")
+    
