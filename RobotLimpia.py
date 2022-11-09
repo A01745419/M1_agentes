@@ -23,9 +23,11 @@ class RobotLimpiezaAgent(Agent):
         super().__init__(unique_id, model)
         self.tipo = 1
         self.movimientos_robot = 0
+        self.suciedad = self.model.num_suciedad
 
 
     def move(self):
+        self.suciedad = self.model.num_suciedad
         possible_steps = self.model.grid.get_neighborhood(
             self.pos,
             moore=True,
@@ -36,10 +38,10 @@ class RobotLimpiezaAgent(Agent):
         if len(cellmates) != 0:
             for i in cellmates:
                 if i.tipo == 0:
+                    self.model.num_suciedad -= 1
                     self.tipo = 3
                     i.tipo = 4
                     limpia = True
-                    self.model.num_suciedad -= 1
                 elif i.tipo == 4:
                     self.tipo = 1
                 
@@ -57,6 +59,7 @@ class RobotLimpiezaAgent(Agent):
                 self.movimientos_robot += 1
 
     def step(self):
+        self.suciedad = self.model.num_suciedad
         if self.model.steps_max > 0 and self.model.num_suciedad > 0:
             self.move()
             self.model.steps_max -= 1
@@ -72,6 +75,7 @@ class SuciedadAgent(Agent):
         super().__init__(unique_id, model)
         self.tipo = 0
         self.movimientos_robot = 0
+        self.suciedad = self.model.num_suciedad
             
 class LimpiezaModel(Model):
     '''
@@ -95,6 +99,10 @@ class LimpiezaModel(Model):
             model_reporters={"Total Movements":LimpiezaModel.calculate_movements},
             agent_reporters={}
         )
+        self.datacollector2 = DataCollector(
+            model_reporters={"Total Dirty":LimpiezaModel.calculate_dirty},
+            agent_reporters={}
+        )
         
         for i in range(self.num_agents):
             a = RobotLimpiezaAgent(i, self)
@@ -111,16 +119,36 @@ class LimpiezaModel(Model):
             pos = self.random.choice(celdas)
             self.grid.place_agent(a, (pos[0], pos[1])) 
             celdas.remove(pos)
-        
+
+
     def calculate_movements(model):
         total_movements = 0
         movements_report = [agent.movimientos_robot for agent in model.schedule.agents]
         for x in movements_report:
             total_movements += x
         return total_movements
+
+    def calculate_dirty(model):
+        dirty_report = [agent.suciedad for agent in model.schedule.agents]
+        for x in dirty_report:
+            return x 
+        # total_dirty = 0
+        # dirty_report = [agent.suciedad for agent in model.schedule.agents]
+        # for x in dirty_report:
+        #     if total_dirty < x:
+        #         total_dirty += x
+        #     elif total_dirty > x:
+        #         res = total_dirty - x
+        #         total_dirty -= res
+        #     else:
+        #         return total_dirty
+        
+           
+
     def step(self):
         self.schedule.step()
         self.datacollector.collect(self)
+        self.datacollector2.collect(self)
         self.porcentaje_sucias_final = (self.num_suciedad * 100) // (self.width * self.height)
         print(f'Numero de celdas sucias restantes= {self.num_suciedad}')
         print(f'Porcentaje de celdas sucias restantes= {self.porcentaje_sucias_final} %')
