@@ -9,6 +9,9 @@ from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.modules import ChartModule
 
 def agent_portrayal(agent):
+    '''
+    Define el color que tendra cada agente en cierto estado.
+    '''
     portrayal = {"Shape": "circle",
                  "Filled": "false",
                  "Layer": 0,
