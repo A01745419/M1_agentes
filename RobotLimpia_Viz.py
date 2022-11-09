@@ -45,14 +45,14 @@ def agent_portrayal(agent):
 ancho = 20
 alto = 10
 agentes = 8
-porcentaje_sucias = 0.40
+porcentajeSucias = 0.40
 pasos = 100
 grid = CanvasGrid(agent_portrayal, ancho, alto, 750, 750)
-total_movements_graph = ChartModule([{"Label": "Total Movements", "Color": "Red"}], data_collector_name='datacollector')
-total_dirty_graph = ChartModule([{"Label": "Total Dirty", "Color": "Blue"}], data_collector_name='datacollector2')
+totalMovementsGraph = ChartModule([{"Label": "Total Movements", "Color": "Red"}], data_collector_name='dataCollectorMovements')
+totalDirtyGraph = ChartModule([{"Label": "Total Dirty", "Color": "Blue"}], data_collector_name='dataCollectorDirty')
 server = ModularServer(LimpiezaModel,
-                       [grid, total_movements_graph, total_dirty_graph],
+                       [grid, totalMovementsGraph, totalDirtyGraph],
                        "Robot de Limpieza",
-                       {"width":ancho, "height":alto, "agents": agentes, "dirty": porcentaje_sucias, "steps": pasos})
+                       {"width":ancho, "height":alto, "agents": agentes, "dirty": porcentajeSucias, "steps": pasos})
 server.port = 8521 # The default
 server.launch()

@@ -27,12 +27,12 @@ class RobotLimpiezaAgent(Agent):
         '''
         super().__init__(unique_id, model)
         self.tipo = 1
-        self.movimientos_robot = 0
-        self.suciedad = self.model.num_suciedad
+        self.movimientosRobot = 0
+        self.suciedad = self.model.numSuciedad
 
     def move(self):
-        self.suciedad = self.model.num_suciedad
-        possible_steps = self.model.grid.get_neighborhood(
+        self.suciedad = self.model.numSuciedad
+        possibleSteps = self.model.grid.get_neighborhood(
             self.pos,
             moore=True,
             include_center=False,
@@ -43,7 +43,7 @@ class RobotLimpiezaAgent(Agent):
         if len(cellmates) != 0:
             for i in cellmates:
                 if i.tipo == 0:
-                    self.model.num_suciedad -= 1
+                    self.model.numSuciedad -= 1
                     self.tipo = 3
                     i.tipo = 4
                     limpia = True
@@ -51,22 +51,22 @@ class RobotLimpiezaAgent(Agent):
                     self.tipo = 1
                 
         if len(cellmates) == 0 or limpia == False:
-            new_position = self.random.choice(possible_steps)
-            cellmates_newp = self.model.grid.get_cell_list_contents([new_position])
-            if len(cellmates_newp) == 1:
-                if cellmates_newp[0].tipo != 1:
+            new_position = self.random.choice(possibleSteps)
+            cellmatesNewPos = self.model.grid.get_cell_list_contents([new_position])
+            if len(cellmatesNewPos) == 1:
+                if cellmatesNewPos[0].tipo != 1:
                     self.model.grid.move_agent(self, new_position)
                     self.model.movimientos += 1
-                    self.movimientos_robot += 1
-            elif len(cellmates_newp) == 0:
+                    self.movimientosRobot += 1
+            elif len(cellmatesNewPos) == 0:
                 self.model.grid.move_agent(self, new_position)
                 self.model.movimientos += 1
-                self.movimientos_robot += 1
+                self.movimientosRobot += 1
 
     def step(self):
-        self.suciedad = self.model.num_suciedad
+        self.suciedad = self.model.numSuciedad
 
-        if self.model.steps_max > 0 and self.model.num_suciedad > 0:
+        if self.model.steps_max > 0 and self.model.numSuciedad > 0:
             self.move()
             self.model.steps_max -= 1
         else:
@@ -80,8 +80,8 @@ class SuciedadAgent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         self.tipo = 0
-        self.movimientos_robot = 0
-        self.suciedad = self.model.num_suciedad
+        self.movimientosRobot = 0
+        self.suciedad = self.model.numSuciedad
             
 class LimpiezaModel(Model):
     '''
@@ -90,27 +90,27 @@ class LimpiezaModel(Model):
     def __init__(self, width, height, agents, dirty, steps):
         self.width = width
         self.height = height
-        self.num_agents = agents
-        self.porcentaje_sucias = dirty 
+        self.numAgents = agents
+        self.porcentajeSucias = dirty 
         self.pasos = steps
-        self.steps_max = self.pasos * self.num_agents
-        self.num_suciedad = round((self.width * self.height) * self.porcentaje_sucias)
+        self.steps_max = self.pasos * self.numAgents
+        self.numSuciedad = round((self.width * self.height) * self.porcentajeSucias)
         self.grid = MultiGrid(width, height, True)
         self.schedule = SimultaneousActivation(self)
         self.running = True #Para la visualizacion usando navegador
         self.movimientos = 0
-        self.porcentaje_sucias_final = (self.num_suciedad * 100) // (width * height)
+        self.porcentajeSuciasFinal = (self.numSuciedad * 100) // (width * height)
         celdas = []
-        self.datacollector = DataCollector(
-            model_reporters={"Total Movements":LimpiezaModel.calculate_movements},
+        self.dataCollectorMovements = DataCollector(
+            model_reporters={"Total Movements":LimpiezaModel.calculateMovements},
             agent_reporters={}
         )
-        self.datacollector2 = DataCollector(
-            model_reporters={"Total Dirty":LimpiezaModel.calculate_dirty},
+        self.dataCollectorDirty = DataCollector(
+            model_reporters={"Total Dirty":LimpiezaModel.calculateDirty},
             agent_reporters={}
         )
         
-        for i in range(self.num_agents):
+        for i in range(self.numAgents):
             a = RobotLimpiezaAgent(i, self)
             self.schedule.add(a)
             self.grid.place_agent(a, (1, 1))
@@ -118,7 +118,7 @@ class LimpiezaModel(Model):
         for (content, x, y) in self.grid.coord_iter():
             celdas.append([x, y])
         
-        for i in range(self.num_agents, (self.num_suciedad + self.num_agents)):
+        for i in range(self.numAgents, (self.numSuciedad + self.numAgents)):
             a = SuciedadAgent(i, self)
             self.schedule.add(a)
             # Add the agent to a random grid cell
@@ -126,25 +126,25 @@ class LimpiezaModel(Model):
             self.grid.place_agent(a, (pos[0], pos[1])) 
             celdas.remove(pos)
 
-    def calculate_movements(model):
-        total_movements = 0
-        movements_report = [agent.movimientos_robot for agent in model.schedule.agents]
-        for x in movements_report:
-            total_movements += x
-        return total_movements
+    def calculateMovements(model):
+        totalMovements = 0
+        movementsReport = [agent.movimientosRobot for agent in model.schedule.agents]
+        for x in movementsReport:
+            totalMovements += x
+        return totalMovements
 
-    def calculate_dirty(model):
-        dirty_report = [agent.suciedad for agent in model.schedule.agents]
-        for x in dirty_report:
+    def calculateDirty(model):
+        dirtyReport = [agent.suciedad for agent in model.schedule.agents]
+        for x in dirtyReport:
             return x 
 
     def step(self):
         self.schedule.step()
-        self.datacollector.collect(self)
-        self.datacollector2.collect(self)
-        self.porcentaje_sucias_final = (self.num_suciedad * 100) // (self.width * self.height)
-        print(f'Numero de celdas sucias restantes= {self.num_suciedad}')
-        print(f'Porcentaje de celdas sucias restantes= {self.porcentaje_sucias_final} %')
-        print(f'Total de movimientos realizados por los {self.num_agents} agentes= {self.movimientos}')
+        self.dataCollectorMovements.collect(self)
+        self.dataCollectorDirty.collect(self)
+        self.porcentajeSuciasFinal = (self.numSuciedad * 100) // (self.width * self.height)
+        print(f'Numero de celdas sucias restantes= {self.numSuciedad}')
+        print(f'Porcentaje de celdas sucias restantes= {self.porcentajeSuciasFinal} %')
+        print(f'Total de movimientos realizados por los {self.numAgents} agentes= {self.movimientos}')
         print(f'Pasos totales restantes= {self.steps_max}')
         print(" ")    
