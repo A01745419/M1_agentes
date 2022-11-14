@@ -1,3 +1,8 @@
+"""
+Logica de Limpieza con Robot que incluye agentes y modelo
+Autores: Jose Luis Madrigal y Cesar Emiliano Palome
+Noviembre 9, 2022
+"""
 # La clase `Model` se hace cargo de los atributos a nivel del modelo, maneja los agentes. 
 # Cada modelo puede contener múltiples agentes y todos ellos son instancias de la clase `Agent`.
 from mesa import Agent, Model 
@@ -12,33 +17,37 @@ from mesa.datacollection import DataCollector
 
 class RobotLimpiezaAgent(Agent):
     '''
-    Representa a un agente o una celda con estado vivo (1) o muerto (0)
+    Representa a un robot de limpieza que encuentra celdas sucias para eliminarlas.
     '''
     def __init__(self, unique_id, model):
         '''
         Crea un agente con estado inicial aleatorio de 0 o 1, también se le asigna un identificador 
-        formado por una tupla (x,y). También se define un nuevo estado cuyo valor será definido por las 
-        reglas mencionadas arriba.
+        formado por una tupla (x,y). También se define un tipo que determina el agente que es,
+        un numero de movimientos y de suciedad.
         '''
         super().__init__(unique_id, model)
         self.tipo = 1
-        self.movimientos_robot = 0
-        self.suciedad = self.model.num_suciedad
-
+        self.movimientosRobot = 0
+        self.suciedad = self.model.numSuciedad
 
     def move(self):
-        self.suciedad = self.model.num_suciedad
-        possible_steps = self.model.grid.get_neighborhood(
+        '''
+        Define las reglas con las cuales puede moverse un robot hacia una celda
+        y las acciones a tomar en ciertas circunstancias.
+        '''
+        self.suciedad = self.model.numSuciedad
+        possibleSteps = self.model.grid.get_neighborhood(
             self.pos,
             moore=True,
             include_center=False,
             radius = 8)
         cellmates = self.model.grid.get_cell_list_contents([self.pos])
         limpia = False
+
         if len(cellmates) != 0:
             for i in cellmates:
                 if i.tipo == 0:
-                    self.model.num_suciedad -= 1
+                    self.model.numSuciedad -= 1
                     self.tipo = 3
                     i.tipo = 4
                     limpia = True
@@ -46,21 +55,26 @@ class RobotLimpiezaAgent(Agent):
                     self.tipo = 1
                 
         if len(cellmates) == 0 or limpia == False:
-            new_position = self.random.choice(possible_steps)
-            cellmates_newp = self.model.grid.get_cell_list_contents([new_position])
-            if len(cellmates_newp) == 1:
-                if cellmates_newp[0].tipo != 1:
+            new_position = self.random.choice(possibleSteps)
+            cellmatesNewPos = self.model.grid.get_cell_list_contents([new_position])
+            if len(cellmatesNewPos) == 1:
+                if cellmatesNewPos[0].tipo != 1:
                     self.model.grid.move_agent(self, new_position)
                     self.model.movimientos += 1
-                    self.movimientos_robot += 1
-            elif len(cellmates_newp) == 0:
+                    self.movimientosRobot += 1
+            elif len(cellmatesNewPos) == 0:
                 self.model.grid.move_agent(self, new_position)
                 self.model.movimientos += 1
-                self.movimientos_robot += 1
+                self.movimientosRobot += 1
 
     def step(self):
-        self.suciedad = self.model.num_suciedad
-        if self.model.steps_max > 0 and self.model.num_suciedad > 0:
+        '''
+        Genera un paso en la iteracion del modelo para
+        realizar ciertas acciones y actualizar informacion.
+        '''
+        self.suciedad = self.model.numSuciedad
+
+        if self.model.steps_max > 0 and self.model.numSuciedad > 0:
             self.move()
             self.model.steps_max -= 1
         else:
@@ -69,42 +83,55 @@ class RobotLimpiezaAgent(Agent):
 
 class SuciedadAgent(Agent):
     '''
-    Representa a un agente o una celda con estado vivo (1) o muerto (0)
+    Representa a la suciedad que puede encontrarse en alguna celda.
     '''
     def __init__(self, unique_id, model):
+        '''
+        Crea un agente de suciedad que ocupa una celda en el grid
+        y espera a ser limpiado por un agente robot.
+        '''
         super().__init__(unique_id, model)
         self.tipo = 0
-        self.movimientos_robot = 0
-        self.suciedad = self.model.num_suciedad
+        self.movimientosRobot = 0
+        self.suciedad = self.model.numSuciedad
             
 class LimpiezaModel(Model):
     '''
-    Define el modelo del juego de la vida.
+    Define el modelo del limpieza con robot.
     '''
     def __init__(self, width, height, agents, dirty, steps):
+        '''
+        Crea un model para la limpieza de suciedad con robot
+        en el que se definen variables para representar
+        a los agentes y realizar sus acciones en cada step.
+        
+        Se reciben parametros que son los datos iniciales:
+        ancho y alto del grid, numero de agentes,
+        porcentaje de suciedad y numero maximo de steps(tiempo).
+        '''
         self.width = width
         self.height = height
-        self.num_agents = agents
-        self.porcentaje_sucias = dirty 
+        self.numAgents = agents
+        self.porcentajeSucias = dirty 
         self.pasos = steps
-        self.steps_max = self.pasos * self.num_agents
-        self.num_suciedad = round((self.width * self.height) * self.porcentaje_sucias)
+        self.steps_max = self.pasos * self.numAgents
+        self.numSuciedad = round((self.width * self.height) * self.porcentajeSucias)
         self.grid = MultiGrid(width, height, True)
         self.schedule = SimultaneousActivation(self)
         self.running = True #Para la visualizacion usando navegador
         self.movimientos = 0
-        self.porcentaje_sucias_final = (self.num_suciedad * 100) // (width * height)
+        self.porcentajeSuciasFinal = (self.numSuciedad * 100) // (width * height)
         celdas = []
-        self.datacollector = DataCollector(
-            model_reporters={"Total Movements":LimpiezaModel.calculate_movements},
+        self.dataCollectorMovements = DataCollector(
+            model_reporters={"Total Movements":LimpiezaModel.calculateMovements},
             agent_reporters={}
         )
-        self.datacollector2 = DataCollector(
-            model_reporters={"Total Dirty":LimpiezaModel.calculate_dirty},
+        self.dataCollectorDirty = DataCollector(
+            model_reporters={"Total Dirty":LimpiezaModel.calculateDirty},
             agent_reporters={}
         )
         
-        for i in range(self.num_agents):
+        for i in range(self.numAgents):
             a = RobotLimpiezaAgent(i, self)
             self.schedule.add(a)
             self.grid.place_agent(a, (1, 1))
@@ -112,7 +139,7 @@ class LimpiezaModel(Model):
         for (content, x, y) in self.grid.coord_iter():
             celdas.append([x, y])
         
-        for i in range(self.num_agents, (self.num_suciedad + self.num_agents)):
+        for i in range(self.numAgents, (self.numSuciedad + self.numAgents)):
             a = SuciedadAgent(i, self)
             self.schedule.add(a)
             # Add the agent to a random grid cell
@@ -120,39 +147,37 @@ class LimpiezaModel(Model):
             self.grid.place_agent(a, (pos[0], pos[1])) 
             celdas.remove(pos)
 
+    def calculateMovements(model):
+        '''
+        Regresa los movimientos totales que van realizando todos los agentes
+        en cada step.
+        '''
+        totalMovements = 0
+        movementsReport = [agent.movimientosRobot for agent in model.schedule.agents]
+        for x in movementsReport:
+            totalMovements += x
+        return totalMovements
 
-    def calculate_movements(model):
-        total_movements = 0
-        movements_report = [agent.movimientos_robot for agent in model.schedule.agents]
-        for x in movements_report:
-            total_movements += x
-        return total_movements
-
-    def calculate_dirty(model):
-        dirty_report = [agent.suciedad for agent in model.schedule.agents]
-        for x in dirty_report:
+    def calculateDirty(model):
+        '''
+        Regresa el numero de celdas sucias que se va teniendo en cada step.
+        '''
+        dirtyReport = [agent.suciedad for agent in model.schedule.agents]
+        for x in dirtyReport:
             return x 
-        # total_dirty = 0
-        # dirty_report = [agent.suciedad for agent in model.schedule.agents]
-        # for x in dirty_report:
-        #     if total_dirty < x:
-        #         total_dirty += x
-        #     elif total_dirty > x:
-        #         res = total_dirty - x
-        #         total_dirty -= res
-        #     else:
-        #         return total_dirty
-        
-           
 
     def step(self):
+        '''
+        Genera un paso del modelo para que los agentes actuen,
+        se actualice informacion, se colecten datos y
+        se muestra en la consola el estado de algunas variables.
+        '''
         self.schedule.step()
-        self.datacollector.collect(self)
-        self.datacollector2.collect(self)
-        self.porcentaje_sucias_final = (self.num_suciedad * 100) // (self.width * self.height)
-        print(f'Numero de celdas sucias restantes= {self.num_suciedad}')
-        print(f'Porcentaje de celdas sucias restantes= {self.porcentaje_sucias_final} %')
-        print(f'Total de movimientos realizados por los {self.num_agents} agentes= {self.movimientos}')
+        self.dataCollectorMovements.collect(self)
+        self.dataCollectorDirty.collect(self)
+        self.porcentajeSuciasFinal = (self.numSuciedad * 100) // (self.width * self.height)
+        print(f'Numero de celdas sucias restantes= {self.numSuciedad}')
+        print(f'Porcentaje de celdas sucias restantes= {self.porcentajeSuciasFinal} %')
+        print(f'Total de movimientos realizados por los {self.numAgents} agentes= {self.movimientos}')
         print(f'Pasos totales restantes= {self.steps_max}')
-        print(" ")
-    
+        print(" ")    

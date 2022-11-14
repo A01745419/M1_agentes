@@ -1,15 +1,17 @@
 """
-Visualizador del Juego de la Vida
-Autor: Jorge Rmz Uresti
-Octubre 8, 2021
+Visualizador de Limpieza con Robot
+Autores: Jose Luis Madrigal y Cesar Emiliano Palome
+Noviembre 9, 2022
 """
 from RobotLimpia import *
 from mesa.visualization.modules import CanvasGrid
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.modules import ChartModule
 
-
 def agent_portrayal(agent):
+    '''
+    Define el color que tendra cada agente en cierto estado.
+    '''
     portrayal = {"Shape": "circle",
                  "Filled": "false",
                  "Layer": 0,
@@ -33,6 +35,7 @@ def agent_portrayal(agent):
                  "Layer": 0,
                  "Color": "black",
                  "r": 0}
+
     if agent.tipo == 1: # robot normal
         return portrayal
     elif agent.tipo == 0: # sucio
@@ -42,17 +45,17 @@ def agent_portrayal(agent):
     else:
         return portrayal4 # limpio
 
-ancho = 10
+ancho = 20
 alto = 10
-agentes = 3
-porcentaje_sucias = .20
-pasos = 50
+agentes = 8
+porcentajeSucias = 0.40
+pasos = 100
 grid = CanvasGrid(agent_portrayal, ancho, alto, 750, 750)
-total_movements_graph = ChartModule([{"Label": "Total Movements", "Color": "Red"}], data_collector_name='datacollector')
-total_dirty_graph = ChartModule([{"Label": "Total Dirty", "Color": "Blue"}], data_collector_name='datacollector2')
+totalMovementsGraph = ChartModule([{"Label": "Total Movements", "Color": "Red"}], data_collector_name='dataCollectorMovements')
+totalDirtyGraph = ChartModule([{"Label": "Total Dirty", "Color": "Blue"}], data_collector_name='dataCollectorDirty')
 server = ModularServer(LimpiezaModel,
-                       [grid, total_movements_graph, total_dirty_graph],
+                       [grid, totalMovementsGraph, totalDirtyGraph],
                        "Robot de Limpieza",
-                       {"width":ancho, "height":alto, "agents": agentes, "dirty": porcentaje_sucias, "steps": pasos})
+                       {"width":ancho, "height":alto, "agents": agentes, "dirty": porcentajeSucias, "steps": pasos})
 server.port = 8521 # The default
 server.launch()
